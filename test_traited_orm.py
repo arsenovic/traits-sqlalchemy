@@ -4,7 +4,7 @@ from nose.tools import assert_equal
 import sqlalchemy as sql
 from sqlalchemy import orm
 
-from enthought.traits.api import push_exception_handler, pop_exception_handler
+from traits.api import push_exception_handler, pop_exception_handler
 
 import traited_orm
 
@@ -48,13 +48,14 @@ class Foo(traited_orm.ORMapped):
     bars = traited_orm.DBList()
     bazzes = traited_orm.DBList()
 
-traited_orm.trait_mapper(Bar, bar)
-traited_orm.trait_mapper(Baz, baz)
-traited_orm.trait_mapper(Foo, foo, properties=dict(
+orm.mapper(Foo, foo)
+orm.mapper(Bar, bar)
+orm.mapper(Baz, baz)
+'''traited_orm.trait_mapper(Foo, foo, properties=dict(
     bars = traited_orm.trait_list_relation(Bar),
     bazzes = traited_orm.trait_list_relation(Baz, secondary=foo_baz),
 ))
-
+'''
 db = None
 conn = None
 session = None
@@ -79,12 +80,29 @@ def teardown():
     pop_exception_handler()
 
 
+def test_simple():
+    transaction = conn.begin()
+    try:
+        session.add(Foo(int=10, float=20.0, string='Foo'))
+        session.commit()
+        session.flush()
+        foo = session.query(Foo).first()
+        assert_equal(foo.int, 10)
+        assert_equal(foo.float, 20.0)
+        assert_equal(foo.string, 'Foo')
+        
+        
+    finally:
+        transaction.rollback()
+'''
 def test_create_via_instantiation():
     transaction = conn.begin()
     try:
-        session.save(Foo(int=10, float=20.0, string='Foo',
+        session.add(Foo(int=10, float=20.0, string='Foo',
             bars=[Bar(string='bar1'), Bar(string='barnone')],
-            bazzes=[Baz(string='baz1'), Baz(string='baz2')]))
+            bazzes=[Baz(string='baz1'), Baz(string='baz2')])
+            )
+        session.commit()
         session.flush()
         foo = session.query(Foo).first()
         assert_equal(foo.int, 10)
@@ -98,13 +116,18 @@ def test_create_via_instantiation():
 def test_scalars_update():
     transaction = conn.begin()
     try:
-        session.save(Foo(int=10, float=20.0, string='Foo'))
+        session.add(Foo(int=10, float=20.0, string='Foo'))
+        session.commit()
         session.flush()
         foo = session.query(Foo).first()
         foo.int = 20
         foo.float = 30.0
         foo.string = 'Not Foo'
-        session.flush()
+        
+        session.commit()
+        
+        raise ValueError
+        #session.flush()
         del foo
         foo2 = session.query(Foo).first()
         yield assert_equal, foo2.int, 20
@@ -116,7 +139,8 @@ def test_scalars_update():
 def test_lists_update_via_assignment():
     transaction = conn.begin()
     try:
-        session.save(Foo())
+        session.add(Foo())
+        session.commit()
         session.flush()
         foo = session.query(Foo).first()
         foo.bars = [Bar(string='bar1'), Bar(string='barnone')]
@@ -135,10 +159,11 @@ def test_lists_update_via_assignment():
 def test_lists_update_via_modification():
     transaction = conn.begin()
     try:
-        session.save(Foo(
+        session.add_all(Foo(
             bars=[Bar(string='bar1'), Bar(string='barnone')],
             bazzes=[Baz(string='baz1'), Baz(string='baz2')],
         ))
+        session.commit()
         session.flush()
         foo = session.query(Foo).first()
         foo.bars.append(Bar(string='bar3'))
@@ -161,11 +186,12 @@ def test_lists_update_via_modification():
 def test_cloning_does_not_clone_sqlalchemy_metadata():
     transaction = conn.begin()
     try:
-        session.save(Foo(int=10, float=20.0, string='Foo'))
+        session.add(Foo(int=10, float=20.0, string='Foo'))
+        session.commit()
         session.flush()
         foo = session.query(Foo).first()
         foo2 = foo.clone_traits()
         assert set(foo.traits(db_storage=True).keys() + ['trait_added', 'trait_modified', '_session']) == set(foo2.traits().keys())
     finally:
         transaction.rollback()
-
+'''

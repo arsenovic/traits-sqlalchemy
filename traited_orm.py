@@ -9,7 +9,7 @@ provide this by default, e.g. DBInt, DBInstance, DBStr, etc. Many of these are
 also customized to accept None, too, in order to support SQL NULLs.
 
 The only collection trait supported is DBList. One cannot currently map Dict or
-Set traits.
+Set traits. 
 
 Instead of using sqlalchemy.orm.mapper() to declare mappers, use trait_mapper().
 For 1:N and M:N relations that map to a DBList, use trait_list_relation()
@@ -19,9 +19,9 @@ instead of sqlalchemy.orm.relation().
 
 import weakref
 
-from sqlalchemy.orm import EXT_CONTINUE, MapperExtension, attributes, mapper, relation, session
+from sqlalchemy.orm import EXT_CONTINUE, MapperExtension, mapper, relation, session
 
-from enthought.traits.api import (Any, Array, Either, Float, HasTraits,
+from traits.api import (Any, Array, Either, Float, HasTraits,
     Instance, Int, List, Property, Python, Str, TraitListObject, on_trait_change)
 
 __all__ = ['MappedTraitListObject', 'DBList', 'DBAny', 'DBArray', 'DBFloat',
@@ -159,38 +159,7 @@ def _fix_dblist(object, value, trait_name, trait):
             value.name_items = trait_name + '_items'
             value.trait = trait.handler
 
-class TraitMapperExtension(MapperExtension):
-    """ Create ORMapped instances correctly.
-    """
 
-    def create_instance(self, mapper, selectcontext, row, class_):
-        """ Create ORMapped instances correctly.
-
-        This will make sure that the HasTraits machinery is hooked up so that
-        things like @on_trait_change() will work.
-        """
-        if issubclass(class_, HasTraits):
-            obj = attributes.new_instance(class_)
-            HasTraits.__init__(obj)
-            return obj
-        else:
-            return EXT_CONTINUE
-
-    def populate_instance(self, mapper, selectcontext, row, instance, **flags):
-        """ Receive a newly-created instance before that instance has
-        its attributes populated.
-
-        This will fix up any MappedTraitListObject values which were created
-        without the appropriate metadata.
-        """
-        if isinstance(instance, HasTraits):
-            mapper.populate_instance(selectcontext, instance, row, **flags)
-            # Check for bad DBList traits.
-            for trait_name, trait in instance.traits(db_storage=True).items():
-                value = instance.trait_get(trait_name)[trait_name]
-                _fix_dblist(instance, value, trait_name, trait)
-        else:
-            return EXT_CONTINUE
 
 
 class ORMapped(HasTraits):
@@ -247,6 +216,39 @@ def trait_list_relation(argument, secondary=None,
     kwargs['lazy'] = False
     return relation(argument, secondary=secondary,
         collection_class=collection_class, **kwargs)
+
+class TraitMapperExtension(MapperExtension):
+    """ Create ORMapped instances correctly.
+    """
+
+    def create_instance(self, mapper, selectcontext, row, class_):
+        """ Create ORMapped instances correctly.
+
+        This will make sure that the HasTraits machinery is hooked up so that
+        things like @on_trait_change() will work.
+        """
+        if issubclass(class_, HasTraits):
+            obj = mapper.class_manager.new_instance(class_)
+            HasTraits.__init__(obj)
+            return obj
+        else:
+            return EXT_CONTINUE
+
+    def populate_instance(self, mapper, selectcontext, row, instance, **flags):
+        """ Receive a newly-created instance before that instance has
+        its attributes populated.
+
+        This will fix up any MappedTraitListObject values which were created
+        without the appropriate metadata.
+        """
+        if isinstance(instance, HasTraits):
+            mapper.populate_instance(selectcontext, instance, row, **flags)
+            # Check for bad DBList traits.
+            for trait_name, trait in instance.traits(db_storage=True).items():
+                value = instance.trait_get(trait_name)[trait_name]
+                _fix_dblist(instance, value, trait_name, trait)
+        else:
+            return EXT_CONTINUE
 
 def trait_mapper(class_, local_table=None, *args, **kwds):
     """ Return a new Mapper object suitably extended to handle HasTraits
