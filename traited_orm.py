@@ -19,8 +19,9 @@ instead of sqlalchemy.orm.relation().
 
 import weakref
 
-from sqlalchemy.orm import EXT_CONTINUE, MapperExtension, mapper, relation, session
+from sqlalchemy.orm import EXT_CONTINUE, MapperExtension, mapper, relation, session, reconstructor
 
+from sqlalchemy.orm.attributes import set_attribute
 from traits.api import (Any, Array, Either, Float, HasTraits,
     Instance, Int, List, Property, Python, Str, TraitListObject, on_trait_change)
 
@@ -160,11 +161,22 @@ def _fix_dblist(object, value, trait_name, trait):
             value.trait = trait.handler
 
 
-
-
 class ORMapped(HasTraits):
     """ Base class providing the necessary connection to the SQLAlchemy mapper.
     """
+    
+    @reconstructor
+    def init_on_load(self):
+        """
+        This will make sure that the HasTraits machinery is hooked up so that
+        things like @on_trait_change() will work.
+        """
+        super(ORMapped, self).__init__()
+        # Check for bad DBList traits.
+        for trait_name, trait in self.traits(db_storage=True).items():
+            print trait_name
+            value = self.trait_get(trait_name)[trait_name]
+            _fix_dblist(self, value, trait_name, trait)
 
     # The SQLAlchemy Session this object belongs to.
     _session = Property()
@@ -192,7 +204,9 @@ class ORMapped(HasTraits):
         to be flushed.  As a work-around we must manually set the SQLAlchemy
         dirty flag when one of our db_storage traits has been changed.
         """
-        if hasattr(self, '_state'):
+        
+        
+        if hasattr(self, '_sa_instance_state'):
             trait = self.trait(trait_name)
             # Use the InstrumentedAttribute descriptor on this class inform
             # SQLAlchemy of the changes.
@@ -216,7 +230,7 @@ def trait_list_relation(argument, secondary=None,
     kwargs['lazy'] = False
     return relation(argument, secondary=secondary,
         collection_class=collection_class, **kwargs)
-
+    
 class TraitMapperExtension(MapperExtension):
     """ Create ORMapped instances correctly.
     """
@@ -250,16 +264,4 @@ class TraitMapperExtension(MapperExtension):
         else:
             return EXT_CONTINUE
 
-def trait_mapper(class_, local_table=None, *args, **kwds):
-    """ Return a new Mapper object suitably extended to handle HasTraits
-    classes.
-    """
-    # Add our MapperExtension.
-    extensions = kwds.setdefault('extension', [])
-    if isinstance(extensions, MapperExtension):
-        # Scalar. Turn into a list.
-        extensions = [extensions]
-    extensions.insert(0, TraitMapperExtension())
-    kwds['extension'] = extensions
-    return mapper(class_, local_table, *args, **kwds)
 

@@ -51,11 +51,11 @@ class Foo(traited_orm.ORMapped):
 orm.mapper(Foo, foo)
 orm.mapper(Bar, bar)
 orm.mapper(Baz, baz)
-'''traited_orm.trait_mapper(Foo, foo, properties=dict(
-    bars = traited_orm.trait_list_relation(Bar),
-    bazzes = traited_orm.trait_list_relation(Baz, secondary=foo_baz),
-))
-'''
+orm.mapper(Foo, foo, non_primary = True, 
+           properties=dict(bars = traited_orm.trait_list_relation(Bar),
+                           bazzes = traited_orm.trait_list_relation(Baz, secondary=foo_baz),
+    ))
+
 db = None
 conn = None
 session = None
@@ -80,7 +80,12 @@ def teardown():
     pop_exception_handler()
 
 
-def test_simple():
+def test_scalar_add():
+    '''
+    add/commit a scalar object
+    re-instantiate it from a query 
+    
+    '''
     transaction = conn.begin()
     try:
         session.add(Foo(int=10, float=20.0, string='Foo'))
@@ -90,11 +95,36 @@ def test_simple():
         assert_equal(foo.int, 10)
         assert_equal(foo.float, 20.0)
         assert_equal(foo.string, 'Foo')
-        
-        
     finally:
         transaction.rollback()
-'''
+        
+def test_update():
+    '''
+    add/commit a sclar object
+    re-instantiate it from a query 
+    change the instance
+    commit 
+    test changes
+    '''
+    transaction = conn.begin()
+    try:
+        session.add(Foo(int=10, float=20.0, string='Foo'))
+        session.commit()
+        session.flush()
+        foo = session.query(Foo).first()
+        foo.int = 1
+        foo.float=.2
+        foo.string ='ooF'
+        session.commit()
+        foo = session.query(Foo).first()
+        assert_equal(foo.int, 1)
+        assert_equal(foo.float, .2)
+        assert_equal(foo.string, 'ooF')
+    finally:
+        transaction.rollback()
+
+# these tests done work yet
+'''                
 def test_create_via_instantiation():
     transaction = conn.begin()
     try:
@@ -194,4 +224,5 @@ def test_cloning_does_not_clone_sqlalchemy_metadata():
         assert set(foo.traits(db_storage=True).keys() + ['trait_added', 'trait_modified', '_session']) == set(foo2.traits().keys())
     finally:
         transaction.rollback()
+
 '''
