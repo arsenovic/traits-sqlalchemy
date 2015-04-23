@@ -3,7 +3,7 @@ SQLAlchemy.
 
 These tools are not declarative, like the Elixir extension. Rather, they just
 provide the low-level support for mapping an existing schema to traited classes.
-Your classes must subclass from ORMapped. Each mapped trait should have the
+Your classes must subclass from HasDBTraits. Each mapped trait should have the
 "db_storage=True" metadata. Many of the traits have been subclassed here to
 provide this by default, e.g. DBInt, DBInstance, DBStr, etc. Many of these are
 also customized to accept None, too, in order to support SQL NULLs.
@@ -26,7 +26,7 @@ from traits.api import (Any, Array, Either, Float, HasTraits,
     Instance, Int, List, Property, Python, Str, TraitListObject, on_trait_change)
 
 __all__ = ['MappedTraitListObject', 'DBList', 'DBAny', 'DBArray', 'DBFloat',
-    'DBInstance', 'DBInt', 'DBIntKey', 'DBStr', 'ORMapped',
+    'DBInstance', 'DBInt', 'DBIntKey', 'DBStr', 'HasDBTraits',
     'trait_list_relation', 'trait_mapper']
 
 
@@ -161,7 +161,7 @@ def _fix_dblist(object, value, trait_name, trait):
             value.trait = trait.handler
 
 
-class ORMapped(HasTraits):
+class HasDBTraits(HasTraits):
     """ Base class providing the necessary connection to the SQLAlchemy mapper.
     """
     
@@ -171,7 +171,7 @@ class ORMapped(HasTraits):
         This will make sure that the HasTraits machinery is hooked up so that
         things like @on_trait_change() will work.
         """
-        super(ORMapped, self).__init__()
+        super(HasDBTraits, self).__init__()
         # Check for bad DBList traits.
         for trait_name, trait in self.traits(db_storage=True).items():
             print trait_name
@@ -232,11 +232,11 @@ def trait_list_relation(argument, secondary=None,
         collection_class=collection_class, **kwargs)
     
 class TraitMapperExtension(MapperExtension):
-    """ Create ORMapped instances correctly.
+    """ Create HasDBTraits instances correctly.
     """
 
     def create_instance(self, mapper, selectcontext, row, class_):
-        """ Create ORMapped instances correctly.
+        """ Create HasDBTraits instances correctly.
 
         This will make sure that the HasTraits machinery is hooked up so that
         things like @on_trait_change() will work.

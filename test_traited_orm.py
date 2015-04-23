@@ -31,15 +31,15 @@ foo_baz = sql.Table('foo_baz', metadata,
     sql.Column('baz_id', None, sql.ForeignKey('baz.id')),
 )
 
-class Bar(traited_orm.ORMapped):
+class Bar(traited_orm.HasDBTraits):
     id = traited_orm.DBIntKey
     string = traited_orm.DBStr
 
-class Baz(traited_orm.ORMapped):
+class Baz(traited_orm.HasDBTraits):
     id = traited_orm.DBIntKey
     string = traited_orm.DBStr
 
-class Foo(traited_orm.ORMapped):
+class Foo(traited_orm.HasDBTraits):
     id = traited_orm.DBIntKey
     int = traited_orm.DBInt
     float = traited_orm.DBFloat
