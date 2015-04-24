@@ -5,8 +5,7 @@ import sqlalchemy as sql
 from sqlalchemy import orm
 
 from traits.api import push_exception_handler, pop_exception_handler
-
-import traited_orm
+import  traitsql
 
 # Test schema
 metadata = sql.MetaData()
@@ -31,29 +30,29 @@ foo_baz = sql.Table('foo_baz', metadata,
     sql.Column('baz_id', None, sql.ForeignKey('baz.id')),
 )
 
-class Bar(traited_orm.HasDBTraits):
-    id = traited_orm.DBIntKey
-    string = traited_orm.DBStr
+class Bar(traitsql.HasDBTraits):
+    id = traitsql.DBIntKey
+    string = traitsql.DBStr
 
-class Baz(traited_orm.HasDBTraits):
-    id = traited_orm.DBIntKey
-    string = traited_orm.DBStr
+class Baz(traitsql.HasDBTraits):
+    id = traitsql.DBIntKey
+    string = traitsql.DBStr
 
-class Foo(traited_orm.HasDBTraits):
-    id = traited_orm.DBIntKey
-    int = traited_orm.DBInt
-    float = traited_orm.DBFloat
-    string = traited_orm.DBStr
+class Foo(traitsql.HasDBTraits):
+    id = traitsql.DBIntKey
+    int = traitsql.DBInt
+    float = traitsql.DBFloat
+    string = traitsql.DBStr
 
-    bars = traited_orm.DBList()
-    bazzes = traited_orm.DBList()
+    bars = traitsql.DBList()
+    bazzes = traitsql.DBList()
 
 orm.mapper(Foo, foo)
 orm.mapper(Bar, bar)
 orm.mapper(Baz, baz)
 orm.mapper(Foo, foo, non_primary = True, 
-           properties=dict(bars = traited_orm.trait_list_relation(Bar),
-                           bazzes = traited_orm.trait_list_relation(Baz, secondary=foo_baz),
+           properties=dict(bars = traitsql.trait_list_relation(Bar),
+                           bazzes = traitsql.trait_list_relation(Baz, secondary=foo_baz),
     ))
 
 db = None
