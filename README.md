@@ -4,13 +4,14 @@ traits-sqlalchemy
 Utilities for mapping [HasTraits](https://github.com/enthought/traits) classes to a relational database using
 [SQLAlchemy](http://www.sqlalchemy.org).
 
-
 *NOTE:* This project is in the process of  being revived. Currently, it only 
 works with flat (non-relational) classes, ie no Foreignkey.
 
 
+### [examples](http://nbviewer.ipython.org/github/arsenovic/traits-sqlalchemy/blob/master/examples/index.ipynb)
 
-
+Details 
+----------
 
 These tools are not declarative, like the Elixir extension. Rather, they just
 provide the low-level support for mapping an existing schema to traited classes.
