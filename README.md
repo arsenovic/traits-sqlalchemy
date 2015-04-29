@@ -1,8 +1,8 @@
 
 traits-sqlalchemy 
 --------------------
-Utilities for mapping HasTraits classes to a relational database using
-SQLAlchemy.
+Utilities for mapping [HasTraits](https://github.com/enthought/traits) classes to a relational database using
+[SQLAlchemy](http://www.sqlalchemy.org).
 
 
 *NOTE:* This project is in the process of  being revived. Currently, it only 
