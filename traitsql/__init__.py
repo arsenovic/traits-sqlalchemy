@@ -174,7 +174,6 @@ class HasDBTraits(HasTraits):
         super(HasDBTraits, self).__init__()
         # Check for bad DBList traits.
         for trait_name, trait in self.traits(db_storage=True).items():
-            print trait_name
             value = self.trait_get(trait_name)[trait_name]
             _fix_dblist(self, value, trait_name, trait)
 
